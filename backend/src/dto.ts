@@ -11,7 +11,7 @@ export class CreatePromotionDto {
 }
 export class CreateScheduleDto {
   @IsInt() promotionId: number;
-  @IsInt() @Min(1) @Max(6) dayOfWeek: number;
+  @IsInt() @Min(1) @Max(7) dayOfWeek: number;
   @Matches(/^([01]\d|2[0-3]):[0-5]\d$/) sendTime: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }

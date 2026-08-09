@@ -1,7 +1,7 @@
 'use client';
 import {useState} from 'react';
 import {terranovaApi} from '../services/api';
-const days=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const days=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 export default function EventDetail({promotion,schedule,configurations,onClose,onSaved}:{promotion:any;schedule:any;configurations:any[];onClose:()=>void;onSaved:()=>void}){
  const[editing,setEditing]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const[form,setForm]=useState({...promotion,dayOfWeek:schedule?.dayOfWeek||1,sendTime:schedule?.sendTime?.slice(0,5)||'09:00'});

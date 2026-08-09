@@ -3,7 +3,7 @@ import {useEffect,useState} from 'react';
 import {terranovaApi} from '../services/api';
 import LogTable from './Activity';
 import EventDetail from './EventDetail';
-const days=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const days=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 type Config={id:number;name:string;url:string;apiKey:string;color:string;active:boolean};
 type Promo={id:number;name:string;imageUrl:string;message:string;shift:string;active:boolean;configurationId:number};
 type Schedule={id:number;promotionId:number;dayOfWeek:number;sendTime:string};
