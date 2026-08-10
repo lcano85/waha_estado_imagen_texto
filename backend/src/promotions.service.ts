@@ -23,15 +23,32 @@ export class PromotionsService {
   createPromotion(dto: CreatePromotionDto) { return this.promos.save(this.promos.create(dto)); }
   async updatePromotion(id: number, dto: Partial<CreatePromotionDto>) {
     const item = await this.promos.findOneBy({ id }); if (!item) throw new NotFoundException();
-    return this.promos.save(Object.assign(item, dto));
+    const saved=await this.promos.save(Object.assign(item, dto));
+    if(dto.active!==undefined)await this.schedules.update({promotionId:id},{active:dto.active});
+    return saved;
   }
+  async setPromotionStatus(id:number,active:boolean){const item=await this.promos.findOneBy({id});if(!item)throw new NotFoundException();item.active=active;await this.promos.save(item);await this.schedules.update({promotionId:id},{active});return item}
   async removePromotion(id: number) { await this.schedules.delete({ promotionId: id }); return this.promos.delete(id); }
+  async duplicatePromotion(id:number){
+    const source=await this.promos.findOneBy({id});if(!source)throw new NotFoundException('Promoción no encontrada');
+    const copy=await this.promos.save(this.promos.create({name:`${source.name} (copia)`,imageUrl:source.imageUrl,message:source.message,shift:source.shift,configurationId:source.configurationId,active:false}));
+    const sourceSchedules=await this.schedules.findBy({promotionId:id});
+    const schedules=await this.schedules.save(sourceSchedules.map(s=>this.schedules.create({promotionId:copy.id,dayOfWeek:s.dayOfWeek,sendTime:s.sendTime,active:false})));
+    return {promotion:copy,schedules};
+  }
   async createSchedule(dto: CreateScheduleDto) {
     if (!await this.promos.exist({ where: { id: dto.promotionId } })) throw new NotFoundException('Promoción no encontrada');
     return this.schedules.save(this.schedules.create(dto));
   }
   removeSchedule(id: number) { return this.schedules.delete(id); }
   async updateSchedule(id:number,dto:Partial<CreateScheduleDto>){const item=await this.schedules.findOneBy({id});if(!item)throw new NotFoundException('Programación no encontrada');return this.schedules.save(Object.assign(item,dto))}
+  async replaceSchedules(promotionId:number,days:number[],sendTime:string,active:boolean){
+    if(!await this.promos.exist({where:{id:promotionId}}))throw new NotFoundException('Promoción no encontrada');
+    const unique=[...new Set(days)].filter(day=>day>=1&&day<=7);
+    if(!unique.length)throw new Error('Selecciona al menos un día');
+    await this.schedules.delete({promotionId});
+    return this.schedules.save(unique.map(dayOfWeek=>this.schedules.create({promotionId,dayOfWeek,sendTime,active})));
+  }
   async saveSetting(dto: SettingDto) {
     let row = await this.settings.findOneBy({ key: dto.key });
     row = row ? Object.assign(row, { value: dto.value }) : this.settings.create(dto);

@@ -11,6 +11,7 @@ export class SenderService {
     @InjectRepository(DeliveryLog) private logs: Repository<DeliveryLog>,
   ) {}
   async send(promo: Promotion, scheduleId?: number, runDate = new Date().toISOString().slice(0, 10)) {
+    if (!promo.active) throw new Error('La promoción está inactiva y no puede enviarse');
     const duplicate = scheduleId && await this.logs.exist({ where: { scheduleId, runDate, status: 'SENT' } });
     if (duplicate) return { skipped: true, reason: 'Ya fue enviada hoy' };
     const config=await this.configurations.findOneBy({id:promo.configurationId,active:true});
