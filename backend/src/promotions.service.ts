@@ -20,9 +20,10 @@ export class PromotionsService {
     ]);
     return { promotions, schedules, settings: Object.fromEntries(settings.map(x => [x.key, x.value])), logs, configurations };
   }
-  createPromotion(dto: CreatePromotionDto) { return this.promos.save(this.promos.create(dto)); }
+  createPromotion(dto: CreatePromotionDto) { const configurationIds=[...new Set(dto.configurationIds)];return this.promos.save(this.promos.create({...dto,configurationIds,configurationId:configurationIds[0]})); }
   async updatePromotion(id: number, dto: Partial<CreatePromotionDto>) {
     const item = await this.promos.findOneBy({ id }); if (!item) throw new NotFoundException();
+    if(dto.configurationIds){dto.configurationIds=[...new Set(dto.configurationIds)];dto.configurationId=dto.configurationIds[0]}
     const saved=await this.promos.save(Object.assign(item, dto));
     if(dto.active!==undefined)await this.schedules.update({promotionId:id},{active:dto.active});
     return saved;
@@ -31,7 +32,7 @@ export class PromotionsService {
   async removePromotion(id: number) { await this.schedules.delete({ promotionId: id }); return this.promos.delete(id); }
   async duplicatePromotion(id:number){
     const source=await this.promos.findOneBy({id});if(!source)throw new NotFoundException('Promoción no encontrada');
-    const copy=await this.promos.save(this.promos.create({name:`${source.name} (copia)`,imageUrl:source.imageUrl,message:source.message,shift:source.shift,configurationId:source.configurationId,active:false}));
+    const copy=await this.promos.save(this.promos.create({name:`${source.name} (copia)`,imageUrl:source.imageUrl,message:source.message,shift:source.shift,configurationId:source.configurationId,configurationIds:source.configurationIds?.length?source.configurationIds:[source.configurationId],active:false}));
     const sourceSchedules=await this.schedules.findBy({promotionId:id});
     const schedules=await this.schedules.save(sourceSchedules.map(s=>this.schedules.create({promotionId:copy.id,dayOfWeek:s.dayOfWeek,sendTime:s.sendTime,active:false})));
     return {promotion:copy,schedules};
@@ -57,5 +58,5 @@ export class PromotionsService {
   recentLogs() { return this.logs.find({ order: { createdAt: 'DESC' }, take: 50 }); }
   createConfiguration(dto: CreateConfigurationDto) { return this.configurations.save(this.configurations.create(dto)); }
   async updateConfiguration(id:number,dto:Partial<CreateConfigurationDto>){const item=await this.configurations.findOneBy({id});if(!item)throw new NotFoundException();return this.configurations.save(Object.assign(item,dto))}
-  async removeConfiguration(id:number){if(await this.promos.exist({where:{configurationId:id}})) throw new Error('La configuración tiene promociones asociadas');return this.configurations.delete(id)}
+  async removeConfiguration(id:number){const promotions=await this.promos.find();if(promotions.some(p=>(p.configurationIds?.length?p.configurationIds:[p.configurationId]).includes(id)))throw new Error('La configuración tiene promociones asociadas');return this.configurations.delete(id)}
 }

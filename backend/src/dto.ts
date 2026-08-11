@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUrl, Matches, Max, Min } from 'class-validator';
+import { ArrayNotEmpty, ArrayUnique, IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUrl, Matches, Max, Min } from 'class-validator';
 import { Shift } from './entities';
 
 export class CreatePromotionDto {
@@ -6,7 +6,8 @@ export class CreatePromotionDto {
   @IsUrl({ require_tld: false }) imageUrl: string;
   @IsString() message: string;
   @IsEnum(Shift) shift: Shift;
-  @IsInt() configurationId: number;
+  @IsOptional() @IsInt() configurationId?: number;
+  @IsArray() @ArrayNotEmpty() @ArrayUnique() @IsInt({ each: true }) configurationIds: number[];
   @IsOptional() @IsBoolean() active?: boolean;
 }
 export class CreateScheduleDto {
