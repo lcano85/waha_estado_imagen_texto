@@ -1,0 +1,2 @@
+export function promotionConfigurationIds(promotion:any):number[]{return promotion.configurationIds?.length?promotion.configurationIds:[promotion.configurationId]}
+export default function ConfigurationBadges({promotion,configurations}:{promotion:any;configurations:any[]}){const selected=configurations.filter(c=>promotionConfigurationIds(promotion).includes(c.id));return <div className="configBadges">{selected.map(c=><span className="configBadge" style={{background:c.color}} key={c.id}>{c.name}</span>)}</div>}

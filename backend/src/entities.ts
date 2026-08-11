@@ -11,6 +11,7 @@ export class Promotion {
   @Column({ type: 'enum', enum: Shift }) shift: Shift;
   @Column({ default: true }) active: boolean;
   @Column() configurationId: number;
+  @Column({ type: 'simple-json', nullable: true }) configurationIds: number[];
   @CreateDateColumn() createdAt: Date;
   @UpdateDateColumn() updatedAt: Date;
 }
@@ -48,6 +49,7 @@ export class AppSetting {
 export class DeliveryLog {
   @PrimaryGeneratedColumn() id: number;
   @Column() promotionId: number;
+  @Column({ nullable: true }) configurationId: number;
   @Column({ nullable: true }) scheduleId: number;
   @Column({ length: 10 }) runDate: string;
   @Column({ length: 20, default: 'PENDING' }) status: string;
