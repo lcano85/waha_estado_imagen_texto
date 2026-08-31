@@ -1,7 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4100/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('terranova_token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('terranova_token') || sessionStorage.getItem('terranova_token') : null;
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers },
@@ -12,11 +12,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const terranovaApi = {
   login: (email: string, password: string) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  setToken: (token: string) => localStorage.setItem('terranova_token', token),
-  logout: () => { localStorage.removeItem('terranova_token'); localStorage.removeItem('terranova_user'); },
+  setToken: (token: string, remember = true) => { const storage = remember ? localStorage : sessionStorage; localStorage.removeItem('terranova_token'); sessionStorage.removeItem('terranova_token'); storage.setItem('terranova_token', token); },
+  logout: () => { localStorage.removeItem('terranova_token'); sessionStorage.removeItem('terranova_token'); localStorage.removeItem('terranova_user'); },
   setUser: (user: unknown) => localStorage.setItem('terranova_user', JSON.stringify(user)),
   getUser: () => { try { return JSON.parse(localStorage.getItem('terranova_user') || 'null'); } catch { return null; } },
-  hasToken: () => typeof window !== 'undefined' && !!localStorage.getItem('terranova_token'),
+  hasToken: () => typeof window !== 'undefined' && !!(localStorage.getItem('terranova_token') || sessionStorage.getItem('terranova_token')),
   dashboard: () => request<any>('/dashboard', { cache: 'no-store' }),
   createPromotion: (data: unknown) => request<any>('/promotions', { method: 'POST', body: JSON.stringify(data) }),
   createSchedule: (data: unknown) => request('/schedules', { method: 'POST', body: JSON.stringify(data) }),
@@ -30,4 +30,12 @@ export const terranovaApi = {
   saveSetting: (key: string, value: string) => request('/settings', { method: 'POST', body: JSON.stringify({ key, value }) }),
   createConfiguration: (data: unknown) => request<any>('/configurations', { method: 'POST', body: JSON.stringify(data) }),
   deleteConfiguration: (id: number) => request(`/configurations/${id}`, { method: 'DELETE' }),
+  reminderOverview: () => request<any>('/reminders/overview', { cache: 'no-store' }),
+  createReminderGroup: (data: unknown) => request<any>('/reminders/groups', { method: 'POST', body: JSON.stringify(data) }),
+  setReminderGroupStatus: (id: number, active: boolean) => request(`/reminders/groups/${id}/status`, { method: 'PATCH', body: JSON.stringify({ active }) }),
+  syncReminderGroup: (id: number) => request<any>(`/reminders/groups/${id}/sync`, { method: 'POST' }),
+  updateGroupParticipant: (id: number, data: unknown) => request(`/reminders/participants/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  createReminder: (data: unknown) => request<any>('/reminders', { method: 'POST', body: JSON.stringify(data) }),
+  sendReminderNow: (id: number) => request(`/reminders/${id}/send`, { method: 'POST' }),
+  cancelReminder: (id: number) => request(`/reminders/${id}/cancel`, { method: 'PATCH' }),
 };

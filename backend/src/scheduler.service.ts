@@ -4,11 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Promotion, PromotionSchedule } from './entities';
 import { SenderService } from './sender.service';
+import { RemindersService } from './reminders.service';
 
 @Injectable()
 export class SchedulerService {
   private logger = new Logger(SchedulerService.name);
-  constructor(@InjectRepository(PromotionSchedule) private schedules: Repository<PromotionSchedule>, @InjectRepository(Promotion) private promos: Repository<Promotion>, private sender: SenderService) {}
+  constructor(@InjectRepository(PromotionSchedule) private schedules: Repository<PromotionSchedule>, @InjectRepository(Promotion) private promos: Repository<Promotion>, private sender: SenderService, private reminders: RemindersService) {}
   @Cron('0 * * * * *', { timeZone: process.env.TIMEZONE || 'America/Lima' })
   async tick() {
     if (process.env.WORKER_PROCESS !== 'true') return;
@@ -19,5 +20,7 @@ export class SchedulerService {
     const time = `${part('hour')}:${part('minute')}`; const date = `${part('year')}-${part('month')}-${part('day')}`;
     const jobs = await this.schedules.findBy({ dayOfWeek: day, sendTime: time + ':00', active: true });
     for (const job of jobs) { const promo = await this.promos.findOneBy({ id: job.promotionId, active: true }); if (promo) await this.sender.send(promo, job.id, date).catch(e => this.logger.error(e)); }
+    const reminders = await this.reminders.due(now);
+    for (const reminder of reminders) await this.reminders.execute(reminder).catch(e => this.logger.error(`Recordatorio #${reminder.id}: ${e}`));
   }
 }

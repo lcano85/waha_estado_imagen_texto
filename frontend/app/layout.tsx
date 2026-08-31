@@ -11,5 +11,6 @@ import './status-form.css';
 import './modal-fix.css';
 import './day-picker.css';
 import './configuration-picker.css';
+import './reminders.css';
 export const metadata={title:'Terranova Promos'};
 export default function Layout({children}:{children:React.ReactNode}){return <html lang="es"><body>{children}</body></html>}
